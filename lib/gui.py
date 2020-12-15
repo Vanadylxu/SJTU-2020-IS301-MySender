@@ -12,6 +12,9 @@ from lib.packages.arp import myARP
 from lib.misc import *
 icmp_number = 0
 arp_number = 0
+udp_number = 0
+tcp_number = 0
+ip_number = 0
 class Window:
     def __init__(self):
         self.TITLE = "MySender"
@@ -21,6 +24,57 @@ class Window:
 
         # Initial GUI
     def initialGUI(self):
+        def udp_send():
+            global udp_number
+            udpmsg = {}
+            udpmsg['data'] = (udp_data.get()).encode()
+            try:
+                udpmsg['src_port'] = udp_sport.get()
+                check = int(udpmsg['src_port'])
+                assert check <= 65535
+            except:
+                tk.messagebox.showerror(title="error", message="Please check source port!")
+                return
+            try:
+                udpmsg['dst_port'] = udp_dport.get()
+                check = int(udpmsg['dst_port'])
+                assert check <= 65535
+            except:
+                tk.messagebox.showerror(title="error", message="Please check destination port!")
+                return
+
+            udpmsg['src_ip'] = udp_srcip.get()
+            if not check_ip(udpmsg['src_ip']):
+                tk.messagebox.showerror(title="error", message="Please check source ip address!")
+                return
+            udpmsg['dst_ip'] = udp_dstip.get()
+            if not check_ip(udpmsg['dst_ip']):
+                tk.messagebox.showerror(title="error", message="Please check destination ip address!")
+                return
+            udp_pack = myUDP(udpmsg)
+            if udp_pack.send():
+                tk.messagebox.showinfo(title="info", message="send successfully!")
+            else:
+                tk.messagebox.showerror(title="error", message="reply not received")
+            udpDetail.append(udpmsg)
+            udp_number += 1
+            print(udp_number)
+            udplog.insert('', udp_number,values=(udp_number, udpmsg['src_ip'], udpmsg['dst_ip'], udpmsg['src_port'], udpmsg['dst_port']))
+        def udp_show(event):
+            udpDetailText.configure(state="normal")
+            udpDetailText.delete(1.0, tk.END)
+            for item in udplog.selection():
+                item_text = udplog.item(item, "values")
+                print(item_text)
+                print(udpDetail[int(item_text[0])-1])
+                udpDetailText.insert("insert", "number:" + item_text[0] + '\n')
+                udpDetailText.insert("end", "data:" + str(udpDetail[int(item_text[0])-1]["data"]) + '\n')
+                udpDetailText.insert("end", "destination ip address:" + udpDetail[int(item_text[0]) - 1]["dst_ip"] + '\n')
+                udpDetailText.insert("end", "source ip address:" + udpDetail[int(item_text[0]) - 1]["src_ip"] + '\n')
+                udpDetailText.insert("end", "destination port:" + str(udpDetail[int(item_text[0]) - 1]["dst_port"]) + '\n')
+                udpDetailText.insert("end", "source port:" + str(udpDetail[int(item_text[0]) - 1]["src_port"]) + '\n')
+                udpDetailText.configure(state="disabled")
+
         def arp_send():
             global arp_number
             arptype = {"Request":1 , "Reply": 2}
@@ -38,7 +92,6 @@ class Window:
             arpmsg['src_mac'] =arp_srcmac.get()
             arpmsg['src_ip'] =arp_srcip.get()
             arpmsg['dst_ip'] =arp_dstip.get()
-            print(arpmsg['dst_ip'] )
             arp_pack = myARP(arpmsg)
             if not check_ip(arpmsg['src_ip']) or not check_ip(arpmsg['dst_ip']):
                 tk.messagebox.showerror(title="error", message="Please check ip address!")
@@ -49,7 +102,6 @@ class Window:
                 arp_number += 1
                 arpDetail.append(arpmsg)
                 arplog.insert('',"end", arp_number, values=(arp_number, arpmsg['src_ip'],arpmsg['src_mac'], arpmsg['dst_ip'],arpmsg['dst_mac'], arp_type[str(arpmsg['type'])]))
-
         def arp_show(event):
             arpDetailText.configure(state="normal")  #防止数据被修改
             arpDetailText.delete(1.0, tk.END)
@@ -66,15 +118,9 @@ class Window:
                 arpDetailText.insert("end", "source mac address:" + str(arpDetail[int(item_text[0]) - 1]["src_mac"]) + '\n')
                 arpDetailText.configure(state="disabled")
 
-
-
-
-
-
         def icmp_send():
             global icmp_number
             #print(number)
-
             icmpmsg={}
             icmptype={"8":"request","0":"reply"}
             icmpmsg['data'] = (icmp_data.get()).encode()
@@ -85,7 +131,6 @@ class Window:
             except:
                 tk.messagebox.showerror(title="error", message="Please check type!")
                 return
-
             try:
                 icmpmsg['code'] = icmp_code.get()
                 check = int(icmpmsg['code'])
@@ -124,7 +169,6 @@ class Window:
         def icmp_show(event):
             icmpDetailText.configure(state="normal")
             icmptype = {"8": "request", "0": "reply"}
-
             icmpDetailText.delete(1.0,tk.END)
             for item in icmplog.selection():
                 item_text = icmplog.item(item, "values")
@@ -279,7 +323,65 @@ class Window:
         scroll2.config(command=self.outputBox.yview)
         frame4.pack_forget()
         # frame5 --------我-----是------分-------割--------线-------！-----> UDP
-        frame5 = tk.Frame(window, height=350, bg="yellow")
+        frame5 = tk.Frame(window, height=350, bg="white")
+        frame5.pack(side=tk.TOP, fill=tk.X)
+        tk.Label(frame5, text="发送UDP报文", font=TitleStyle).pack(side=tk.TOP, anchor=tk.N)
+        udpTypeSet = tk.Frame(frame5, bg="white")
+        udpTypeSet.pack(side=tk.TOP, fill=tk.X)
+        udpdataSet = tk.Frame(frame5, bg="white")
+        udpdataSet.pack(side=tk.TOP, fill=tk.X)
+        udp_dport = tk.IntVar(value=8001)
+        udp_sport = tk.IntVar(value=8002)
+        udp_srcip = tk.StringVar(value=get_host_ip())
+        udp_dstip = tk.StringVar(value='8.8.8.8')
+        udp_data = tk.StringVar(value='')
+        tk.Button(udpdataSet, text="send", command=udp_send, bd=3).grid(row=0, column=3, padx=5)
+        tk.Label(udpTypeSet, text="Destination Port").grid(row=0, column=0, padx=0)
+        tk.Entry(udpTypeSet, textvariable=udp_dport, width=5, bd=3, bg="white").grid(row=0, column=1, padx=0)
+        tk.Label(udpTypeSet, text="Soucrce Port").grid(row=0, column=2, padx=0)
+        tk.Entry(udpTypeSet, textvariable=udp_sport, width=5, bd=3, bg="white").grid(row=0, column=3, padx=0)
+        tk.Label(udpTypeSet, text="Source IP Address",bd=3).grid(row=0, column=4, padx=5)
+        tk.Entry(udpTypeSet, textvariable=udp_srcip, width=20, bd=3, bg="white").grid(row=0, column=5, padx=5)
+        tk.Label(udpTypeSet, text="Destination IP Address", bd=3).grid(row=0, column=6, padx=5)
+        tk.Entry(udpTypeSet, textvariable=udp_dstip, width=20, bd=3, bg="white").grid(row=0, column=7, padx=5)
+        tk.Label(udpdataSet, text="Data", bd=3).grid(row=0, column=0, padx=5)
+        tk.Entry(udpdataSet, textvariable=udp_data, width=100, bd=3, bg="white").grid(row=0, column=1, padx=5)
+
+        udpInfo = tk.Frame(frame5, bg="white")
+        tk.Label(udpInfo, text="UDP send history", bd=3).grid(row=0, column=1, padx=5)
+        tk.Label(udpInfo, text="UDP package detail", bd=3).grid(row=0, column=2, padx=5)
+        udpDetailText = tk.Text(udpInfo, bg="white")
+
+        udpDetailText.grid(row=1, column=2, padx=5)
+        udpDetailText.insert("insert", "no selected packages!")
+        udpDetailText.configure(state="disabled")
+
+        udpscrolly = tk.Scrollbar(udpInfo)
+        udpscrollx = tk.Scrollbar(udpInfo, orient=tk.HORIZONTAL)
+        udplog = ttk.Treeview(udpInfo, show="headings", yscrollcommand=udpscrolly.set, xscrollcommand=udpscrollx.set)
+        udpscrolly.grid(row=1, column=0, sticky=tk.W + tk.S + tk.N)
+        udpscrolly.config(command=udplog.yview)
+        udpscrollx.grid(row=2, column=1, sticky=tk.W + tk.E + tk.N)
+        udpscrollx.config(command=udplog.xview)
+
+        udplog['columns'] = ['number', 'Source ip Address', 'Source Port', 'Destination ip Address',
+                             'Destination Port']
+        udplog.column('number', width=60)
+
+        udplog.column('Source ip Address', width=100)
+        udplog.column('Destination ip Address', width=100)
+        udplog.column('Source Port', width=100)
+        udplog.column('Destination Port', width=100)
+        udplog.heading('number', text='number')
+        udplog.heading('Source ip Address', text='Source ip')
+        udplog.heading('Destination ip Address', text='Destination ip')
+        udplog.heading('Source Port', text='Source Port')
+        udplog.heading('Destination Port', text='Destination Port')
+        udplog.bind("<Double-1>", udp_show)
+        udplog.grid(row=1, column=1)
+        udpInfo.pack(side=tk.BOTTOM, fill=tk.Y, expand=tk.YES, anchor=tk.SW)
+        udplog.grid(row=1, column=1)
+
 
         frame5.pack_forget()
 

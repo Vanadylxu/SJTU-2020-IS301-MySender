@@ -5,14 +5,13 @@ class myICMP(object):
     def __init__(self,msg=None):
         if not msg:
             return
-        else:
-            self.type = msg["type"]
-            self.code = msg["code"]
-            self.id = msg["id"]
-            self.seq = msg["seq"]
-            self.data = msg["data"]
-            self.dst_ip = msg["dst_ip"]
-            self.src_ip = msg["src_ip"]
+        self.type = msg["type"]
+        self.code = msg["code"]
+        self.id = msg["id"]
+        self.seq = msg["seq"]
+        self.data = msg["data"]
+        self.dst_ip = msg["dst_ip"]
+        self.src_ip = msg["src_ip"]
 
     def checkSum(self,str):#educoder写过
         csum = 0
@@ -34,11 +33,9 @@ class myICMP(object):
         answer = ~csum
         answer = answer & 0xffff
         answer = answer >> 8 | (answer << 8 & 0xff00)
-
         return answer
 
     def pack(self,data):#打包报文
-
         header = struct.pack('>bbHHh',self.type,self.code, 0, self.id, self.seq)
         data = struct.pack('{}s'.format(len(data)), data)
         print(data)
