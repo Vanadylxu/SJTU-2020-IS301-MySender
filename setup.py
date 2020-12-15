@@ -1,8 +1,10 @@
-from lib.packages.icmp import ICMP
-from lib.packages.ip import IP
-from lib.packages.tcp import TCP
-from lib.packages.udp import UDP
-from lib.packages.arp import ARP
 
-
+import  lib.gui
+import ctypes
+import sys
+if ctypes.windll.shell32.IsUserAnAdmin() == 0:
+    print('Sorry! You should run this with administrative privileges.')
+    sys.exit()
+mywindow=lib.gui.Window()
+mywindow.initialGUI()
 

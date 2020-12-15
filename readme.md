@@ -1,8 +1,6 @@
-
-
 # My Sender #
 
-this program is course project for SJTU-IS301,all work is done by VanadylXu.
+this program is course project for SJTU-IS301,all work is done by Yangfan Xu.
 
 Using this package sender you can:
 

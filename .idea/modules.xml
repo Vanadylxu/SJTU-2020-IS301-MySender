@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/SJTU-2020-IS301-MySender.iml" filepath="$PROJECT_DIR$/.idea/SJTU-2020-IS301-MySender.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/packageSender.iml" filepath="$PROJECT_DIR$/.idea/packageSender.iml" />
     </modules>
   </component>
 </project>

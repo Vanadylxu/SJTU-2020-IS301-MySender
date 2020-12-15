@@ -1,4 +1,4 @@
 
-class IP(object):
+class myIP(object):
 
     pass

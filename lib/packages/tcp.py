@@ -1,4 +1,4 @@
 
-class TCP(object):
+class myTCP(object):
 
     pass
