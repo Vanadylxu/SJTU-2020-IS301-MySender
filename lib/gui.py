@@ -2,7 +2,6 @@ import tkinter as tk
 import tkinter.font as tkFont
 from tkinter import ttk
 import tkinter.messagebox
-import binascii
 import webbrowser
 from lib.packages.icmp import myICMP
 from lib.packages.ip import myIP
@@ -18,12 +17,224 @@ ip_number = 0
 class Window:
     def __init__(self):
         self.TITLE = "MySender"
-        self.WIDTH = 1000
+        self.WIDTH = 900
         self.HEIGHT = 600
-        self.parseDic = {}
 
         # Initial GUI
     def initialGUI(self):
+        def ip_send():
+            iptypedict = {"ICMP": 1 , "TCP": 6, "UDP": 17  }
+            global ip_number
+            ipmsg = {}
+            ipmsg['data'] = (ip_data.get()).encode()
+            ipmsg['version'] = ipVersion.get()
+            try:
+                ipmsg['DF'] = DF.get()
+                check = int(ipmsg['DF'])
+                assert check <= 1
+            except:
+                tk.messagebox.showerror(title="error", message="Please check DF,flags is either 1 or 0!")
+                return
+            try:
+                ipmsg['MF'] = MF.get()
+                check = int(ipmsg['MF'])
+                assert check <= 1
+            except:
+                tk.messagebox.showerror(title="error", message="Please check MF,flags is either 1 or 0!")
+                return
+            try:
+                ipmsg['ttl'] = ttl.get()
+                check = int(ipmsg['ttl'])
+                assert check <= 255
+            except:
+                tk.messagebox.showerror(title="error", message="TTL is an integer less than 256!")
+                return
+            try:
+                ipmsg['identifier'] = ip_id.get()
+                check = int(ipmsg['identifier'])
+            except:
+                tk.messagebox.showerror(title="error", message="Please check id!")
+            try:
+                ipmsg['type'] = iptypedict[ipupType.get()]
+            except:
+                tk.messagebox.showerror(title="error", message="Please select a upper protocol type!")
+            try:
+                ipmsg['option'] = bytes.fromhex((opt.get()))
+            except:
+                tk.messagebox.showerror(title="error", message="Options must be hex string!")
+                return
+            ipmsg['src_ip'] = ip_srcip.get()
+            if not check_ip(ipmsg['src_ip']):
+                tk.messagebox.showerror(title="error", message="Please check source ip address!")
+                return
+            ipmsg['dst_ip'] = ip_dstip.get()
+            if not check_ip(ipmsg['dst_ip']):
+                tk.messagebox.showerror(title="error", message="Please check destination ip address!")
+                return
+
+            ip_pack = myIP(ipmsg)
+            if ip_pack.send():
+                tk.messagebox.showinfo(title="info", message="send successfully!")
+            else:
+                tk.messagebox.showerror(title="error", message="IP package send error please contact author")
+            ipDetail.append(ipmsg)
+            ip_number += 1
+            iplog.insert('', ip_number, values=(ip_number, ipmsg['src_ip'], ipmsg['dst_ip']))
+
+        def ip_show(event):
+            typedict = { 1: "ICMP", 6: "TCP",  17: "UDP"}
+            ipDetailText.configure(state="normal")
+            ipDetailText.delete(1.0, tk.END)
+            for item in iplog.selection():
+                item_text = iplog.item(item, "values")
+                print(item_text)
+                print(ipDetail[int(item_text[0]) - 1])
+                ipDetailText.insert("insert", "number:" + item_text[0] + '\n')
+                ipDetailText.insert("end", "data:" + str(ipDetail[int(item_text[0]) - 1]["data"]) + '\n')
+                ipDetailText.insert("end", "Upper Protocol:" + typedict[ipDetail[int(item_text[0]) - 1]["type"]] + '\n')
+                ipDetailText.insert("end", "destination ip address:" + ipDetail[int(item_text[0]) - 1]["dst_ip"] + '\n')
+                ipDetailText.insert("end", "source ip address:" + ipDetail[int(item_text[0]) - 1]["src_ip"] + '\n')
+                ipDetailText.insert("end", "DF:" + str(ipDetail[int(item_text[0]) - 1]["DF"]) + '\n')
+                ipDetailText.insert("end", "MF:" + str(ipDetail[int(item_text[0]) - 1]["MF"]) + '\n')
+                ipDetailText.insert("end", "Identifier:" + str(ipDetail[int(item_text[0]) - 1]["identifier"]) + '\n')
+                ipDetailText.insert("end", "Time to live:" + str(ipDetail[int(item_text[0]) - 1]["ttl"]) + '\n')
+                ipDetailText.configure(state="disabled")
+
+        def tcp_send():
+            global tcp_number
+            tcpmsg = {}
+            tcpmsg['data'] = (tcp_data.get()).encode()
+            try:
+                tcpmsg['CWR'] = CWR.get()
+                check = int(tcpmsg['CWR'])
+                assert check <= 1
+            except:
+                tk.messagebox.showerror(title="error", message="Please check CWR,flags is either 1 or 0!")
+                return
+            try:
+                tcpmsg['ECE'] = ECE.get()
+                check = int(tcpmsg['ECE'])
+                assert check <= 1
+            except:
+                tk.messagebox.showerror(title="error", message="Please check ECE,flags is either 1 or 0!")
+                return
+            try:
+                tcpmsg['URG'] = URG.get()
+                check = int(tcpmsg['URG'])
+                assert check <= 1
+            except:
+                tk.messagebox.showerror(title="error", message="Please check URG,flags is either 1 or 0!")
+                return
+            try:
+                tcpmsg['ACK'] = ACK.get()
+                check = int(tcpmsg['ACK'])
+                assert check <= 1
+            except:
+                tk.messagebox.showerror(title="error", message="Please check ACK,flags is either 1 or 0!")
+                return
+            try:
+                tcpmsg['PSH'] = PSH.get()
+                check = int(tcpmsg['PSH'])
+                assert check <= 1
+            except:
+                tk.messagebox.showerror(title="error", message="Please check PSH,flags is either 1 or 0!")
+                return
+            try:
+                tcpmsg['RST'] = RST.get()
+                check = int(tcpmsg['RST'])
+                assert check <= 1
+            except:
+                tk.messagebox.showerror(title="error", message="Please check RST,flags is either 1 or 0!")
+                return
+            try:
+                tcpmsg['SYN'] = SYN.get()
+                check = int(tcpmsg['SYN'])
+                assert check <= 1
+            except:
+                tk.messagebox.showerror(title="error", message="Please check SYN,flags is either 1 or 0!")
+                return
+            try:
+                tcpmsg['FIN'] = FIN.get()
+                check = int(tcpmsg['ACK'])
+                assert check <= 1
+            except:
+                tk.messagebox.showerror(title="error", message="Please check FIN,flags is either 1 or 0!")
+                return
+            try:
+                tcpmsg['urgent_pointer'] = urgent_pointer.get()
+                check = int(tcpmsg['urgent_pointer'])
+            except:
+                tk.messagebox.showerror(title="error", message="Please check urgent_pointer!")
+                return
+            try:
+                tcpmsg['win_size'] = win_size.get()
+                check = int(tcpmsg['win_size'])
+            except:
+                tk.messagebox.showerror(title="error", message="Please check urgent_pointer!")
+            try:
+                tcpmsg['seq_number'] = seq_num.get()
+                check = int(tcpmsg['seq_number'])
+            except:
+                tk.messagebox.showerror(title="error", message="Please check sequence number!")
+                return
+            try:
+                tcpmsg['ack_number'] = ack_num.get()
+                check = int(tcpmsg['ack_number'])
+            except:
+                tk.messagebox.showerror(title="error", message="Please check acknowledge number!")
+                return
+            try:
+                tcpmsg['option'] = bytes.fromhex((opt.get()))
+            except:
+                tk.messagebox.showerror(title="error", message="Options must be hex string!")
+                return
+            try:
+                tcpmsg['src_port'] = tcp_sport.get()
+                check = int(tcpmsg['src_port'])
+                assert check <= 65535
+            except:
+                tk.messagebox.showerror(title="error", message="Please check source port!")
+                return
+            try:
+                tcpmsg['dst_port'] = tcp_dport.get()
+                check = int(tcpmsg['dst_port'])
+                assert check <= 65535
+            except:
+                tk.messagebox.showerror(title="error", message="Please check destination port!")
+                return
+            tcpmsg['src_ip'] = tcp_srcip.get()
+            if not check_ip(tcpmsg['src_ip']):
+                tk.messagebox.showerror(title="error", message="Please check source ip address!")
+                return
+            tcpmsg['dst_ip'] = tcp_dstip.get()
+            if not check_ip(tcpmsg['dst_ip']):
+                tk.messagebox.showerror(title="error", message="Please check destination ip address!")
+                return
+            tcp_pack = myTCP(tcpmsg)
+            if tcp_pack.send():
+                tk.messagebox.showinfo(title="info", message="send successfully!")
+            else:
+                tk.messagebox.showerror(title="error", message="TCP package send error please contact author")
+            tcpmsg['flags'] = bin((CWR.get() << 7) + (ECE.get() << 6) + (URG.get() << 5) + (ACK.get() << 4) + (PSH.get() << 3) + (RST.get() << 2) + (SYN.get() << 1) + FIN.get())
+            tcpDetail.append(tcpmsg)
+            tcp_number += 1
+            tcplog.insert('', tcp_number, values=(tcp_number, tcpmsg['src_ip'], tcpmsg['dst_ip'], tcpmsg['src_port'], tcpmsg['dst_port']))
+        def tcp_show(event):
+            tcpDetailText.configure(state="normal")
+            tcpDetailText.delete(1.0, tk.END)
+            for item in tcplog.selection():
+                item_text = tcplog.item(item, "values")
+                print(item_text)
+                print(tcpDetail[int(item_text[0]) - 1])
+                tcpDetailText.insert("insert", "number:" + item_text[0] + '\n')
+                tcpDetailText.insert("end", "data:" + str(tcpDetail[int(item_text[0]) - 1]["data"]) + '\n')
+                tcpDetailText.insert("end", "destination ip address:" + tcpDetail[int(item_text[0]) - 1]["dst_ip"] + '\n')
+                tcpDetailText.insert("end", "source ip address:" + tcpDetail[int(item_text[0]) - 1]["src_ip"] + '\n')
+                tcpDetailText.insert("end", "destination port:" + str(tcpDetail[int(item_text[0]) - 1]["dst_port"]) + '\n')
+                tcpDetailText.insert("end", "source port:" + str(tcpDetail[int(item_text[0]) - 1]["src_port"]) + '\n')
+                tcpDetailText.insert("end", "flags:" + str(tcpDetail[int(item_text[0]) - 1]["flags"]) + '\n')
+                tcpDetailText.configure(state="disabled")
+
         def udp_send():
             global udp_number
             udpmsg = {}
@@ -42,7 +253,6 @@ class Window:
             except:
                 tk.messagebox.showerror(title="error", message="Please check destination port!")
                 return
-
             udpmsg['src_ip'] = udp_srcip.get()
             if not check_ip(udpmsg['src_ip']):
                 tk.messagebox.showerror(title="error", message="Please check source ip address!")
@@ -183,9 +393,6 @@ class Window:
                 icmpDetailText.insert("end", "sequence:" + str(icmpDetail[int(item_text[0]) - 1]["seq"]) + '\n')
                 icmpDetailText.insert("end", "identifier:" + str(icmpDetail[int(item_text[0]) - 1]["id"]) + '\n')
                 icmpDetailText.configure(state="disabled")
-
-
-
         # Change tab 切换选项卡
         def changeTag(tag):
             frame0.pack_forget()
@@ -205,17 +412,6 @@ class Window:
             elif tag == 4:
                 frame7.pack(fill=tk.X)
 
-        # Change type
-        def changeType(tag): #frame3专用的小tab
-            clockSet.pack_forget()
-            resetSet.pack_forget()
-            customSet.pack_forget()
-            if tag == 0:
-                clockSet.pack(side=tk.TOP, fill=tk.BOTH, expand=tk.YES, pady=5, padx=10)
-            elif tag == 1:
-                resetSet.pack(side=tk.TOP, fill=tk.BOTH, expand=tk.YES, pady=5, padx=10)
-            elif tag == 2:
-                customSet.pack(side=tk.TOP, fill=tk.BOTH, expand=tk.YES, pady=5, padx=10)
 
         window = tk.Tk()
 
@@ -233,95 +429,198 @@ class Window:
         udpDetail = []
         ipDetail = []
 
-
-        frame0 = tk.Frame(window, height=200, bg="white")
-
-
-        # Tag: 0 --> input; 1 --> output; 2 --> other
-        frame2 = tk.Frame(window)
+        frame0 = tk.Frame(window, height=200, bg="white") #欢迎界面
+        frame2 = tk.Frame(window)#选项卡
         frame2.pack(fill=tk.Y, pady=10)
         tag = tk.IntVar()
         tagWidth = 23
+        width = 10
         tk.Radiobutton(frame2, text="IP", command=lambda: changeTag(0), variable=tag, width=tagWidth,  value=0, bd=1,indicatoron=0).grid(column=0, row=1)
         tk.Radiobutton(frame2, text="TCP", command=lambda: changeTag(1), variable=tag, width=tagWidth, value=1, bd=1,indicatoron=0).grid(column=1, row=1)
         tk.Radiobutton(frame2, text="UDP", command=lambda: changeTag(2), variable=tag, width=tagWidth, value=2, bd=1,indicatoron=0).grid(column=2, row=1)
         tk.Radiobutton(frame2, text="ARP", command=lambda: changeTag(3), variable=tag, width=tagWidth, value=3, bd=1,indicatoron=0).grid(column=3, row=1)
         tk.Radiobutton(frame2, text="ICMP", command=lambda: changeTag(4), variable=tag, width=tagWidth, value=4, bd=1,indicatoron=0).grid(column=4, row=1)
 
-
-
-        # frame3 --> IP
-        # Signal info
-        frame3 = tk.Frame(window, height=300, bg="")
+        # frame3 --------我-----是------分-------割--------线-------！-----> IP
+        frame3 = tk.Frame(window, height=300, bg="white")
         frame3.pack(side=tk.TOP, fill=tk.X)
         tk.Label(frame3, text="发送IP报文", font=TitleStyle).pack(side=tk.TOP, anchor=tk.N)
-        scroll = tk.Scrollbar(frame3)
-        scroll.pack(side=tk.RIGHT, fill=tk.Y)
-        self.inputBox = tk.Listbox(frame3, bd=1, selectmode=tk.SINGLE, yscrollcommand=scroll.set, height=8)
-        self.inputBox.pack(side=tk.TOP, anchor=tk.NW, fill=tk.X, expand=tk.YES)
-        scroll.config(command=self.inputBox.yview)
+        ipTypeSet = tk.Frame(frame3, bg="white")
+        ipTypeSet.pack(side=tk.TOP, fill=tk.X)
+        ipnumberSet = tk.Frame(frame3, bg="white")
+        ipnumberSet.pack(side=tk.TOP, fill=tk.X)
+        ipflagSet = tk.Frame(frame3, bg="white")
+        ipflagSet.pack(side=tk.TOP, fill=tk.X)
+        ipdataSet = tk.Frame(frame3, bg="white")
+        ipdataSet.pack(side=tk.TOP, fill=tk.X)
 
-        width = 10
-        frameInputSet = tk.Frame(frame3, bg="white")
-        frameInputSet.pack(side=tk.TOP, fill=tk.BOTH, expand=tk.YES)
-        tk.Label(frameInputSet, text="  Input Setting").grid(row=0, column=0, pady=5)
-        tk.Label(frameInputSet, text="  Signal Type", width=width).grid(row=1, column=0)
-        # Tpye: 0 --> clock; 1 --> reset; 2 --> custom
-        type = tk.IntVar()
-        tk.Radiobutton(frameInputSet, text="Clock", variable=type, value=0, command=lambda:changeType(0), bd=1, indicatoron=0, width=width).grid(row=1, column=1, padx=10)
-        tk.Radiobutton(frameInputSet, text="Reset", variable=type, value=1, command=lambda:changeType(1), bd=1, indicatoron=0, width=width).grid(row=1, column=2, padx=10)
-        tk.Radiobutton(frameInputSet, text="Custom", variable=type, value=2, command=lambda:changeType(2), bd=1, indicatoron=0, width=width).grid(row=1, column=3, padx=10)
-        # Clock setting
-        initalValue = tk.StringVar()
-        initalValue.set("1'b0")
-        cycle = tk.StringVar()
-        converse = tk.StringVar()
+        DF = tk.IntVar()
+        MF = tk.IntVar()
+        ipVersion = tk.IntVar(value=4)
+        ip_id = tk.IntVar(value=1)
+        ttl = tk.IntVar(value=100)
+        ip_opt = tk.StringVar(value="")  # last here 12.15
+        ip_srcip = tk.StringVar(value=get_host_ip())
+        ip_dstip = tk.StringVar(value='182.61.200.6')
+        ip_data = tk.StringVar(value='')
+        tk.Button(ipdataSet, text="send", command=ip_send, bd=3).grid(row=0, column=3, padx=5)
+        tk.Label(ipTypeSet, text="Source IP Address", bd=3).grid(row=0, column=0, padx=5)
+        tk.Entry(ipTypeSet, textvariable=ip_srcip, width=23, bd=3, bg="white").grid(row=0, column=1, padx=5)
+        tk.Label(ipTypeSet, text="Destination IP Address", bd=3).grid(row=0, column=2, padx=5)
+        tk.Entry(ipTypeSet, textvariable=ip_dstip, width=23, bd=3, bg="white").grid(row=0, column=3, padx=5)
+        tk.Label(ipdataSet, text="Data", bd=3).grid(row=0, column=0, padx=5)
+        tk.Entry(ipdataSet, textvariable=ip_data, width=100, bd=3, bg="white").grid(row=0, column=1, padx=5)
+        tk.Label(ipflagSet, text="DF", bd=3).grid(row=0, column=8, padx=5)
+        tk.Entry(ipflagSet, textvariable=DF, width=2, bd=3, bg="white").grid(row=0, column=9, padx=5)
+        tk.Label(ipflagSet, text="MF", bd=3).grid(row=0, column=10, padx=5)
+        tk.Entry(ipflagSet, textvariable=MF, width=2, bd=3, bg="white").grid(row=0, column=11, padx=5)
+        tk.Label(ipflagSet, text="Upper protocol", bd=3).grid(row=0, column=0, padx=5)
+        ipupType = ttk.Combobox(ipflagSet, state='readonly',width=10)
+        ipupType['value'] = ('ICMP', 'TCP','UDP')
+        ipupType.grid(row=0, column=1, padx=0)
+        tk.Label(ipflagSet, text="Version", bd=3).grid(row=0, column=2, padx=5)
+        tk.Entry(ipflagSet, textvariable=ipVersion, width=2, bd=3, bg="white",state="disabled").grid(row=0, column=3, padx=5)
+        tk.Label(ipflagSet, text="identifier", bd=3).grid(row=0, column=4, padx=5)
+        tk.Entry(ipflagSet, textvariable=ip_id, width=15, bd=3, bg="white").grid(row=0, column=5, padx=5)
+        tk.Label(ipTypeSet, text="Time to live", bd=3).grid(row=0, column=6, padx=5)
+        tk.Entry(ipTypeSet, textvariable=ttl, width=10, bd=3, bg="white").grid(row=0, column=9, padx=5)
+        tk.Label(ipflagSet, text="Options", bd=3).grid(row=0, column=6, padx=5)
+        tk.Entry(ipflagSet, textvariable=ip_opt, width=15, bd=3, bg="white").grid(row=0, column=7, padx=5)
 
-        clockSet = tk.Frame(frame3, bg="white")
-        #clockSet.pack(side=tk.TOP, fill=tk.BOTH, expand=tk.YES, pady=5, padx=10)
-        tk.Label(clockSet, text="Initial Value").grid(row=0, column=0, pady=5)
-        tk.Radiobutton(clockSet, text="1'b0", variable=initalValue, value="1'b0").grid(row=0, column=1, padx=5)
-        tk.Radiobutton(clockSet, text="1'b1", variable=initalValue, value="1'b1").grid(row=0, column=2, padx=5)
-        tk.Label(clockSet, text="", width=10).grid(row=0, column=3)
-        tk.Label(clockSet, text="Cycle").grid(row=0, column=4, pady=5, padx=10)
-        tk.Entry(clockSet, textvariable=cycle, width=10, bd=2, bg="white").grid(row=0, column=5)
-        # Reset setting
-        resetSet = tk.Frame(frame3, bg="white")
-        tk.Label(resetSet, text="Initial Value").grid(row=0, column=0, pady=5)
-        tk.Radiobutton(resetSet, text="1'b0", variable=initalValue, value="1'b0").grid(row=0, column=1, padx=5)
-        tk.Radiobutton(resetSet, text="1'b1", variable=initalValue, value="1'b1").grid(row=0, column=2, padx=5)
-        tk.Label(resetSet, text="", width=10).grid(row=0, column=3)
-        tk.Label(resetSet, text="Converse").grid(row=0, column=4, pady=5, padx=10)
-        tk.Entry(resetSet, textvariable=converse, width=10, bd=2, bg="white").grid(row=0, column=5)
-        # Custom setting
-        defaultValue = tk.IntVar()
-        radixValue = tk.IntVar()
-        radixValue.set(0)
-        customSet = tk.Frame(frame3, bg="white")
-        customSet.pack(side=tk.TOP, fill=tk.BOTH, expand=tk.YES, pady=5, padx=10)
-        # Radix 0 --> b, 1 --> o, 2 --> d, 3 --> h
-        tk.Label(customSet, text="Radix").grid(row=0, column=0, pady=5, padx=1)
-        tk.Radiobutton(customSet, text="Binary", variable=radixValue, value=0).grid(row=0, column=1)
-        tk.Radiobutton(customSet, text="Octal", variable=radixValue, value=1).grid(row=0, column=2)
-        tk.Radiobutton(customSet, text="Decimal", variable=radixValue, value=2).grid(row=0, column=3)
-        tk.Radiobutton(customSet, text="Hexadecimal", variable=radixValue, value=3).grid(row=0, column=4)
-        # Initial value
-        tk.Label(customSet, text="Default Value").grid(row=1, column=0, pady=5, padx=10)
-        tk.Radiobutton(customSet, text="default 0", variable=defaultValue, value=0).grid(row=1, column=1, padx=5)
-        tk.Radiobutton(customSet, text="default 1", variable=defaultValue, value=1).grid(row=1, column=2, padx=5)
-        tk.Label(customSet, text="Initial Value").grid(row=1, column=3, pady=5, padx=5)
-        tk.Entry(customSet, textvariable=initalValue, width=12, bd=2, bg="white", justify=tk.RIGHT).grid(row=1, column=4)
-        tk.Button(customSet, text="test", command=lambda :print(initalValue.get())).grid()
+        ipInfo = tk.Frame(frame3, bg="white")
+        tk.Label(ipInfo, text="IP send history", bd=3).grid(row=0, column=1, padx=5)
+        tk.Label(ipInfo, text="IP package detail", bd=3).grid(row=0, column=2, padx=5)
+        ipDetailText = tk.Text(ipInfo, bg="white")
+
+        ipDetailText.grid(row=1, column=2, padx=5, sticky=tk.E)
+        ipDetailText.insert("insert", "no selected packages!")
+        ipDetailText.configure(state="disabled")
+
+        ipscrolly = tk.Scrollbar(ipInfo)
+        ipscrollx = tk.Scrollbar(ipInfo, orient=tk.HORIZONTAL)
+        iplog = ttk.Treeview(ipInfo, show="headings", yscrollcommand=ipscrolly.set, xscrollcommand=ipscrollx.set)
+        ipscrolly.grid(row=1, column=0, sticky=tk.W + tk.S + tk.N)
+        ipscrolly.config(command=iplog.yview)
+        ipscrollx.grid(row=2, column=1, sticky=tk.W + tk.E + tk.N)
+        ipscrollx.config(command=iplog.xview)
+
+        iplog['columns'] = ['number', 'Source ip Address',  'Destination ip Address']
+        iplog.column('number', width=60)
+        iplog.column('Source ip Address', width=100)
+        iplog.column('Destination ip Address', width=100)
+        iplog.heading('number', text='number')
+        iplog.heading('Source ip Address', text='Source ip')
+        iplog.heading('Destination ip Address', text='Destination ip')
+        iplog.bind("<Double-1>", ip_show)
+        iplog.grid(row=1, column=1)
+        ipInfo.pack(side=tk.BOTTOM, fill=tk.Y, expand=tk.YES, anchor=tk.SW)
+        iplog.grid(row=1, column=1)
         frame3.pack_forget()
-        # frame4 --> TCP
-        frame4 = tk.Frame(window, height=350, bg="blue")
-        tk.Label(frame4, text=" Bit         Output").pack(anchor=tk.NW)
-        scroll2 = tk.Scrollbar(frame4)
-        scroll2.pack(side=tk.RIGHT, fill=tk.Y)
-        self.outputBox = tk.Listbox(frame4, bd=1, selectmode=tk.SINGLE, yscrollcommand=scroll2.set, height=8, width=65)
-        self.outputBox.pack(side=tk.LEFT)
-        scroll2.config(command=self.outputBox.yview)
+
+        # frame4 --------我-----是------分-------割--------线-------！-----> TCP
+        frame4 = tk.Frame(window, height=350, bg="white")
+        frame4.pack(side=tk.TOP, fill=tk.X)
+        tk.Label(frame4, text="发送TCP报文", font=TitleStyle).pack(side=tk.TOP, anchor=tk.N)
+        tcpTypeSet = tk.Frame(frame4, bg="white")
+        tcpTypeSet.pack(side=tk.TOP, fill=tk.X)
+        tcpnumberSet = tk.Frame(frame4, bg="white")
+        tcpnumberSet.pack(side=tk.TOP, fill=tk.X)
+        tcpflagSet = tk.Frame(frame4, bg="white")
+        tcpflagSet.pack(side=tk.TOP, fill=tk.X)
+        tcpdataSet = tk.Frame(frame4, bg="white")
+        tcpdataSet.pack(side=tk.TOP, fill=tk.X)
+
+        CWR = tk.IntVar()
+        ECE = tk.IntVar()
+        URG = tk.IntVar()
+        ACK = tk.IntVar()
+        PSH = tk.IntVar()
+        RST = tk.IntVar()
+        SYN = tk.IntVar()
+        FIN = tk.IntVar()
+        opt = tk.StringVar()
+        seq_num = tk.IntVar()
+        ack_num = tk.IntVar()
+        urgent_pointer = tk.IntVar()
+        win_size = tk.IntVar(value=1024)  #last here 12.15
+        tcp_dport = tk.IntVar(value=80)
+        tcp_sport = tk.IntVar(value=8091)
+        tcp_srcip = tk.StringVar(value=get_host_ip())
+        tcp_dstip = tk.StringVar(value='182.61.200.6')
+        tcp_data = tk.StringVar(value='')
+        tk.Button(tcpdataSet, text="send", command=tcp_send, bd=3).grid(row=0, column=3, padx=5)
+        tk.Label(tcpTypeSet, text="Destination Port").grid(row=0, column=0, padx=0)
+        tk.Entry(tcpTypeSet, textvariable=tcp_dport, width=5, bd=3, bg="white").grid(row=0, column=1, padx=0)
+        tk.Label(tcpTypeSet, text="Source Port").grid(row=0, column=2, padx=0)
+        tk.Entry(tcpTypeSet, textvariable=tcp_sport, width=5, bd=3, bg="white").grid(row=0, column=3, padx=0)
+        tk.Label(tcpTypeSet, text="Source IP Address", bd=3).grid(row=0, column=4, padx=5)
+        tk.Entry(tcpTypeSet, textvariable=tcp_srcip, width=20, bd=3, bg="white").grid(row=0, column=5, padx=5)
+        tk.Label(tcpTypeSet, text="Destination IP Address", bd=3).grid(row=0, column=6, padx=5)
+        tk.Entry(tcpTypeSet, textvariable=tcp_dstip, width=20, bd=3, bg="white").grid(row=0, column=7, padx=5)
+        tk.Label(tcpdataSet, text="Data", bd=3).grid(row=0, column=0, padx=5)
+        tk.Entry(tcpdataSet, textvariable=tcp_data, width=100, bd=3, bg="white").grid(row=0, column=1, padx=5)
+        tk.Label(tcpflagSet, text="CWR", bd=3).grid(row=0, column=0, padx=5)
+        tk.Entry(tcpflagSet, textvariable=CWR, width=2, bd=3, bg="white").grid(row=0, column=1, padx=5)
+        tk.Label(tcpflagSet, text="ECE", bd=3).grid(row=0, column=2, padx=5)
+        tk.Entry(tcpflagSet, textvariable=ECE, width=2, bd=3, bg="white").grid(row=0, column=3, padx=5)
+        tk.Label(tcpflagSet, text="URG", bd=3).grid(row=0, column=4, padx=5)
+        tk.Entry(tcpflagSet, textvariable=URG, width=2, bd=3, bg="white").grid(row=0, column=5, padx=5)
+        tk.Label(tcpflagSet, text="ACK", bd=3).grid(row=0, column=6, padx=5)
+        tk.Entry(tcpflagSet, textvariable=ACK, width=2, bd=3, bg="white").grid(row=0, column=7, padx=5)
+        tk.Label(tcpflagSet, text="PSH", bd=3).grid(row=0, column=8, padx=5)
+        tk.Entry(tcpflagSet, textvariable=PSH, width=2, bd=3, bg="white").grid(row=0, column=9, padx=5)
+        tk.Label(tcpflagSet, text="RST", bd=3,width=3).grid(row=0, column=10, padx=5)
+        tk.Entry(tcpflagSet, textvariable=RST, width=2, bd=3, bg="white").grid(row=0, column=11, padx=5)
+        tk.Label(tcpflagSet, text="SYN", bd=3).grid(row=0, column=12, padx=5)
+        tk.Entry(tcpflagSet, textvariable=SYN, width=2, bd=3, bg="white").grid(row=0, column=13, padx=5)
+        tk.Label(tcpflagSet, text="FIN", bd=3).grid(row=0, column=14, padx=5)
+        tk.Entry(tcpflagSet, textvariable=FIN, width=2, bd=3, bg="white").grid(row=0, column=15, padx=5)
+        tk.Label(tcpnumberSet, text="Window Size", bd=3).grid(row=0, column=4, padx=5)
+        tk.Entry(tcpnumberSet, textvariable=win_size, width=5, bd=3, bg="white").grid(row=0, column=5, padx=5)
+        tk.Label(tcpflagSet, text="Urgent Pointer", bd=3).grid(row=0, column=16, padx=5)
+        tk.Entry(tcpflagSet, textvariable=urgent_pointer, width=7, bd=3, bg="white").grid(row=0, column=17, padx=5)
+        tk.Label(tcpnumberSet, text="Sequence Number", bd=3).grid(row=0, column=0, padx=5)
+        tk.Entry(tcpnumberSet, textvariable=seq_num, width=10, bd=3, bg="white").grid(row=0, column=1, padx=5)
+        tk.Label(tcpnumberSet, text="Acknowledge number", bd=3).grid(row=0, column=2, padx=5)
+        tk.Entry(tcpnumberSet, textvariable=ack_num, width=10, bd=3, bg="white").grid(row=0, column=3, padx=5)
+        tk.Label(tcpnumberSet, text="Options", bd=3).grid(row=0, column=18, padx=5)
+        tk.Entry(tcpnumberSet, textvariable=opt, width=10, bd=3, bg="white").grid(row=0, column=19, padx=5)
+
+        tcpInfo = tk.Frame(frame4, bg="white")
+        tk.Label(tcpInfo, text="TCP send history", bd=3).grid(row=0, column=1, padx=5)
+        tk.Label(tcpInfo, text="TCP package detail", bd=3).grid(row=0, column=2, padx=5)
+        tcpDetailText = tk.Text(tcpInfo, bg="white")
+
+        tcpDetailText.grid(row=1, column=2, padx=5, sticky = tk.E)
+        tcpDetailText.insert("insert", "no selected packages!")
+        tcpDetailText.configure(state="disabled")
+
+        tcpscrolly = tk.Scrollbar(tcpInfo)
+        tcpscrollx = tk.Scrollbar(tcpInfo, orient=tk.HORIZONTAL)
+        tcplog = ttk.Treeview(tcpInfo, show="headings", yscrollcommand=tcpscrolly.set, xscrollcommand=tcpscrollx.set)
+        tcpscrolly.grid(row=1, column=0, sticky=tk.W + tk.S + tk.N)
+        tcpscrolly.config(command=tcplog.yview)
+        tcpscrollx.grid(row=2, column=1, sticky=tk.W + tk.E + tk.N)
+        tcpscrollx.config(command=tcplog.xview)
+
+        tcplog['columns'] = ['number', 'Source ip Address', 'Source Port', 'Destination ip Address','Destination Port']
+        tcplog.column('number', width=60)
+        tcplog.column('Source ip Address', width=100)
+        tcplog.column('Destination ip Address', width=100)
+        tcplog.column('Source Port', width=100)
+        tcplog.column('Destination Port', width=100)
+        tcplog.heading('number', text='number')
+        tcplog.heading('Source ip Address', text='Source ip')
+        tcplog.heading('Destination ip Address', text='Destination ip')
+        tcplog.heading('Source Port', text='Source Port')
+        tcplog.heading('Destination Port', text='Destination Port')
+        tcplog.bind("<Double-1>", tcp_show)
+        tcplog.grid(row=1, column=1)
+        tcpInfo.pack(side=tk.BOTTOM, fill=tk.Y, expand=tk.YES, anchor=tk.SW)
+        tcplog.grid(row=1, column=1)
+
         frame4.pack_forget()
+
         # frame5 --------我-----是------分-------割--------线-------！-----> UDP
         frame5 = tk.Frame(window, height=350, bg="white")
         frame5.pack(side=tk.TOP, fill=tk.X)
@@ -338,7 +637,7 @@ class Window:
         tk.Button(udpdataSet, text="send", command=udp_send, bd=3).grid(row=0, column=3, padx=5)
         tk.Label(udpTypeSet, text="Destination Port").grid(row=0, column=0, padx=0)
         tk.Entry(udpTypeSet, textvariable=udp_dport, width=5, bd=3, bg="white").grid(row=0, column=1, padx=0)
-        tk.Label(udpTypeSet, text="Soucrce Port").grid(row=0, column=2, padx=0)
+        tk.Label(udpTypeSet, text="Source Port").grid(row=0, column=2, padx=0)
         tk.Entry(udpTypeSet, textvariable=udp_sport, width=5, bd=3, bg="white").grid(row=0, column=3, padx=0)
         tk.Label(udpTypeSet, text="Source IP Address",bd=3).grid(row=0, column=4, padx=5)
         tk.Entry(udpTypeSet, textvariable=udp_srcip, width=20, bd=3, bg="white").grid(row=0, column=5, padx=5)

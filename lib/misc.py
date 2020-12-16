@@ -4,7 +4,6 @@ import socket
 import uuid
 
 def get_mac():
-
     my_mac = uuid.UUID(int=uuid.getnode()).hex[-12:]
     return ":".join([my_mac[e:e + 2] for e in range(0, 11, 2)])
 def check_ip(ipAddr):
@@ -29,7 +28,6 @@ def get_host_ip():
         ip = s.getsockname()[0]
     finally:
         s.close()
-
     return ip
 
 
