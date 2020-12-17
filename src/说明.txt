@@ -1,0 +1,5 @@
+.idea:IDE(PyCharm)生成的项目文件
+__pycache__：项目的编译缓存
+lib:所有源码
+venv:python虚拟环境
+setup.py：程序入口
