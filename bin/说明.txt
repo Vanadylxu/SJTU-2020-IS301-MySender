@@ -1,3 +1,6 @@
 build & dist & setup.spec:编译生成的可执行文件
 MySender.exe：可执行文件，提供给用户的最终程序
+
 运行环境：windows10
+
+如果目录下的快捷方式不能打开，请在build目录下打开setup.exe。
